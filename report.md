@@ -160,7 +160,8 @@ Selanjutnya, dilakukan deteksi **outlier** menggunakan metode **Interquartile Ra
 | Proximity to Industrial Areas | 16             |
 | Population Density            | 7              |
 
-![alt text](image.png)
+![image](https://github.com/user-attachments/assets/00e0f7b0-1a90-453f-82d2-3a8b4774f1eb)
+
 Visualisasi melalui **boxplot** semakin memperjelas sebaran data dan keberadaan outlier di setiap fitur. Polutan udara seperti **PM2.5**, **PM10**, dan **SO2** tampak memiliki sebaran yang lebar dengan banyak data berada di luar whisker (batas IQR), yang mengindikasikan variasi nilai ekstrim dalam data tersebut.
 
 Meskipun demikian, outlier **tidak dihapus** dari dataset. Hal ini dilakukan untuk menjaga **keutuhan informasi**, mengingat data pencilan tersebut mencerminkan kondisi nyata seperti lonjakan polusi di area industri atau wilayah dengan kepadatan penduduk tinggi. Menghilangkan outlier justru berisiko menghilangkan pola penting dalam konteks analisis kualitas udara.
@@ -168,4 +169,129 @@ Meskipun demikian, outlier **tidak dihapus** dari dataset. Hal ini dilakukan unt
 Sebagai langkah mitigasi terhadap pengaruh outlier, proses **scaling** akan dilakukan menggunakan teknik **Robust Scaler**. Metode ini dipilih karena lebih tahan terhadap pengaruh outlier dibandingkan teknik standardisasi konvensional (seperti Min-Max atau Standard Scaler), sehingga mampu menyesuaikan skala data dengan lebih representatif tanpa terdistorsi oleh nilai ekstrim.
 
 ---
+### Univariate Analysis
 
+#### Grafik 1: Distribusi Kategori Kualitas Udara
+![image](https://github.com/user-attachments/assets/a0fd9186-74c0-46d1-8224-d7e069b5a67f)
+
+Grafik pertama menampilkan distribusi **kategori kualitas udara** yang dikelompokkan ke dalam empat kelas utama:
+
+- **Good (Baik)**: Memiliki proporsi terbesar yaitu **40%** dari total sampel.
+- **Moderate (Sedang)**: Menempati urutan kedua dengan **30%** dari total sampel.
+- **Poor (Buruk)**: Mencakup **20%** dari total sampel.
+- **Hazardous (Berbahaya)**: Menjadi kategori paling kecil dengan proporsi **10%**.
+
+Dari distribusi ini, dapat disimpulkan bahwa sebagian besar wilayah dalam data (**70%**) memiliki kualitas udara yang tergolong **baik hingga sedang**, sedangkan **30% sisanya** menunjukkan kualitas udara yang **buruk hingga berbahaya**. Hal ini mengindikasikan adanya potensi risiko pencemaran udara di sejumlah wilayah tertentu.
+
+
+#### Grafik 2: Distribusi dan KDE Faktor Lingkungan
+![image](https://github.com/user-attachments/assets/d29abab1-8364-4230-9584-af6a295da968)
+
+Grafik kedua menampilkan distribusi dan **Kernel Density Estimation (KDE)** dari berbagai **faktor lingkungan** yang berpotensi memengaruhi kualitas udara:
+
+- **Temperature**: Menunjukkan distribusi normal dengan rentang dominan antara **25–35°C**, puncak sekitar **30°C**.
+- **Humidity**: Distribusi cenderung normal, dengan mayoritas nilai berada pada kisaran **50–90%**, dan puncak sekitar **70%**.
+- **PM2.5**: Distribusi menceng ke kanan (**right-skewed**), menunjukkan mayoritas wilayah memiliki kadar PM2.5 rendah (di bawah 50), namun terdapat beberapa nilai ekstrem tinggi.
+- **PM10**: Serupa dengan PM2.5, distribusinya right-skewed, mayoritas di bawah 50, namun dengan beberapa nilai tinggi yang membentuk ekor panjang.
+- **NO2**: Distribusi hampir normal, dengan konsentrasi utama antara **20–45**, dan puncaknya di kisaran **30–35**.
+- **SO2**: Menceng ke kanan, dengan sebagian besar nilai berada di rentang **5–25**, puncaknya sekitar **10–15**.
+- **CO**: Memiliki distribusi **bimodal**, dengan dua puncak pada sekitar **1.0** dan **1.6–1.7**, kemungkinan menunjukkan dua karakteristik lingkungan yang berbeda.
+- **Proximity to Industrial Areas**: Distribusinya juga **bimodal**, dengan dua kelompok dominan pada jarak sekitar **5** dan **12**, mengindikasikan lokasi-lokasi yang dekat dan jauh dari kawasan industri.
+- **Population Density**: Distribusinya cukup merata, dengan dominasi nilai pada rentang **300–600**, mencerminkan variasi tingkat kepadatan penduduk.
+
+Dari distribusi yang ditampilkan, terlihat bahwa nilai-nilai polutan seperti PM2.5, PM10, SO2, dan CO memiliki distribusi menceng ke kanan atau bimodal, yang menandakan adanya nilai ekstrem pada sebagian wilayah. Ini berpotensi berkorelasi dengan wilayah-wilayah yang memiliki kualitas udara rendah (kategori poor dan hazardous). Selain itu, distribusi bimodal pada variabel jarak ke kawasan industri menunjukkan adanya dua kelompok lokasi yang kemungkinan besar mengalami tingkat paparan polusi yang berbeda, yang turut memengaruhi kualitas udara. Variasi suhu dan kelembaban juga dapat berdampak terhadap penyebaran dan reaksi kimia dari polutan di udara, yang selanjutnya memengaruhi kualitas udara secara keseluruhan di wilayah-wilayah tersebut.
+
+---
+
+### Multivariate Analysis
+
+#### Grafik 1: Rata-rata Parameter Lingkungan per Kategori Kualitas Udara
+![image](https://github.com/user-attachments/assets/c7ff760c-7cb1-4292-8526-eb048a37f367)
+
+Grafik ini menunjukkan bahwa kualitas udara yang **semakin buruk** (dari Good ke Hazardous) cenderung diikuti oleh:
+
+- **Kenaikan suhu dan kelembaban**
+- **Peningkatan konsentrasi polutan** seperti PM2.5, PM10, NO2, SO2, dan CO
+- **Penurunan jarak ke kawasan industri** (semakin dekat)
+- **Peningkatan kepadatan penduduk**
+
+Sebaliknya, kategori **Good** memiliki karakteristik lingkungan yang lebih ideal: suhu dan kelembaban lebih rendah, kadar polutan rendah, lokasi lebih jauh dari kawasan industri, dan kepadatan penduduk lebih rendah.
+
+#### Grafik 2: Pairplot Parameter Numerik Berdasarkan Kategori Kualitas Udara
+![image](https://github.com/user-attachments/assets/c1a5c7b7-ae6d-4fd3-9c3c-9b9759e64316)
+
+Pairplot mengungkap beberapa pola penting:
+
+- Korelasi kuat antara **PM2.5 dan PM10**
+- **Temperature dan Humidity** berkorelasi positif dengan beberapa polutan
+- **Jarak ke kawasan industri** berkorelasi negatif dengan kualitas udara
+- **Kepadatan penduduk** berkorelasi positif dengan peningkatan polusi
+
+Distribusi kategori pada pairplot juga memperlihatkan pemisahan yang jelas antara kualitas udara, terutama pada parameter polutan.
+
+Kualitas udara dipengaruhi oleh kombinasi faktor lingkungan. **Kualitas buruk** cenderung terjadi di daerah dengan suhu dan kelembaban tinggi, polusi berat, lokasi dekat industri, dan kepadatan tinggi. Sebaliknya, **kualitas baik** ditemukan di daerah yang lebih bersih, lebih jauh dari industri, dan berpenduduk lebih jarang. Faktor **kedekatan dengan kawasan industri** menjadi pembeda paling signifikan dan menunjukkan perlunya pengawasan ketat terhadap emisi industri dalam perencanaan tata kota.
+
+---
+
+#### Grafik 3: Heatmap Matriks Korelasi antar Variabel Numerik
+![image](https://github.com/user-attachments/assets/6c652f2e-9b46-4c6e-aad7-ef049bdaa72d)
+
+Heatmap korelasi antar variabel numerik digunakan untuk mengidentifikasi hubungan linear antara faktor-faktor yang mempengaruhi kualitas udara.
+
+**Korelasi positif tinggi:**
+- **PM2.5 dan PM10** menunjukkan korelasi sangat kuat (**0.97**), menandakan keduanya cenderung meningkat secara bersamaan.
+- **CO dan NO2** memiliki korelasi kuat (**0.71**), menunjukkan hubungan erat antara keduanya.
+- **CO dan Temperature** berkorelasi cukup kuat (**0.69**), menunjukkan bahwa kadar CO cenderung naik saat suhu meningkat.
+
+**Korelasi negatif:**
+- **Proximity to Industrial Areas (PIA)** berkorelasi negatif terhadap semua variabel lain, terutama terhadap **CO (-0.71)**, menandakan semakin jauh dari kawasan industri, semakin rendah kadar polusi.
+- Korelasi negatif juga terlihat antara **PIA dan Temperature (-0.59)**, serta **PIA dan NO2 (-0.61)**.
+
+**Korelasi sedang:**
+- **Population Density** berkorelasi positif sedang dengan **CO (0.59)** dan **NO2 (0.51)**, mengindikasikan bahwa area dengan kepadatan penduduk tinggi cenderung memiliki tingkat polutan lebih tinggi.
+- **Temperature** juga berkorelasi sedang dengan **NO2 (0.59)** dan **SO2 (0.57)**.
+
+---
+
+### Analisis Faktor-Faktor yang Mempengaruhi Kualitas Udara
+#### 1. Hasil Uji Statistik (ANOVA: F-score dan p-value)
+
+Uji ANOVA dilakukan untuk mengukur sejauh mana masing-masing variabel mampu membedakan kategori kualitas udara secara statistik.
+
+| Variabel                        | F-score   | p-value |
+|---------------------------------|-----------|---------|
+| CO                              | 8292.52   | 0.0000  |
+| Proximity to Industrial Areas   | 3714.95   | 0.0000  |
+| NO2                             | 2676.22   | 0.0000  |
+| Temperature                     | 2191.94   | 0.0000  |
+| SO2                             | 2018.30   | 0.0000  |
+| Population Density              | 1189.93   | 0.0000  |
+| Humidity                        | 1071.28   | 0.0000  |
+| PM10                            | 745.43    | 0.0000  |
+| PM2.5                           | 354.80    | 0.0000  |
+
+> **ANOVA** digunakan Untuk mengukur signifikansi perbedaan rata-rata antar kategori kualitas udara bagi setiap fitur. F-score tinggi menandakan perbedaan yang sangat signifikan.
+
+---
+
+#### 2. Feature Importance berdasarkan Random Forest
+![image](https://github.com/user-attachments/assets/718e76d9-e396-4814-8d79-aabcf8679206)
+
+Model Random Forest digunakan untuk mengukur kontribusi masing-masing fitur dalam memprediksi kualitas udara. Hasilnya divisualisasikan dalam bentuk grafik batang (bar chart).
+
+**Rangking Feature Importance:**
+- **CO (0.34)** — fitur terpenting dalam model.
+- **Proximity to Industrial Areas (0.29)** — menunjukkan pentingnya lokasi terhadap kualitas udara.
+- **NO2 (0.10)** — juga berkontribusi besar.
+
+Fitur lain seperti **SO2 (0.09)** dan **Temperature (0.08)** memberikan kontribusi sedang, sementara **PM2.5 (0.01)** dan **PM10 (0.02)** memberikan kontribusi kecil meskipun secara kesehatan tetap penting.
+
+> **Random Forest** digunakan Karena mampu menangkap hubungan non-linear dan interaksi antar fitur, serta memberikan interpretasi yang baik tentang seberapa besar setiap fitur memengaruhi output prediksi.
+
+- **CO** adalah indikator utama kualitas udara menurut seluruh pendekatan (korelasi, ANOVA, dan Random Forest).
+- **Jarak ke kawasan industri** merupakan faktor eksternal paling berpengaruh, yang secara konsisten menunjukkan hubungan negatif dengan semua polutan.
+- **NO2 dan SO2** adalah polutan gas yang perlu dipantau secara ketat.
+- Faktor meteorologi seperti suhu dan kelembaban memiliki dampak sedang namun penting.
+- **PM2.5 dan PM10**, meskipun kurang penting secara prediktif dalam model ini, tetap perlu diperhatikan karena dampaknya terhadap kesehatan telah banyak dibuktikan dalam studi epidemiologi.
+
+---
