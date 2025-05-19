@@ -13,6 +13,25 @@
   - [Solution Statements](#solution-statements)
 - [Exploratory Data Analysis (EDA)](#exploratory-data-analysis-eda)
   - [Deskripsi Variabel](#deskripsi-variabel)
+  - [Univariate Analysis](#univariate-analysis)
+  - [Multivariate Analysis](#multivariate-analysis)
+  - [Analisis Faktor yang Memengaruhi Kualitas Udara](#analisis-faktor-yang-memengaruhi-kualitas-udara)
+- [Data Preparation](#data-preparation)
+  - [Label Encoding dengan Mapping pada Fitur Target](#label-encoding-dengan-mapping-pada-fitur-target)
+  - [Reduksi Dimensi dengan Principal Component Analysis (PCA)](#reduksi-dimensi-dengan-principal-component-analysis-pca)
+  - [Train-Test Split](#train-test-split)
+  - [Data Scaling dengan RobustScaler](#data-scaling-dengan-robustscaler)
+- [Model Development](#model-development)
+  - [K-Nearest Neighbors (KNN)](#k-nearest-neighbors-knn)
+  - [Random Forest (RF)](#random-forest-rf)
+  - [XGBoost (XGB)](#xgboost-xgb)
+- [Model Evaluation](#model-evaluation)
+  - [Akurasi Model & Classification Report](#akurasi-model--classification-report)
+  - [Confusion Matrix](#confusion-matrix)
+  - [Grafik AUC-ROC](#grafik-auc-roc)
+  - [Kesimpulan Evaluasi Model Klasifikasi](#kesimpulan-evaluasi-model-klasifikasi)
+- [Kesimpulan Akhir](#kesimpulan-akhir)
+
 ---
 ## **Domain Proyek: Lingkungan dan Kesehatan Masyarakat**
 
@@ -270,6 +289,7 @@ Uji ANOVA dilakukan untuk mengukur sejauh mana masing-masing variabel mampu memb
 | PM10                            | 745.43    | 0.0000  |
 | PM2.5                           | 354.80    | 0.0000  |
 
+Semua variabel menunjukkan p-value < 0.0001, yang berarti semuanya memiliki perbedaan yang signifikan secara statistik antar kategori kualitas udara.
 > **ANOVA** digunakan Untuk mengukur signifikansi perbedaan rata-rata antar kategori kualitas udara bagi setiap fitur. F-score tinggi menandakan perbedaan yang sangat signifikan.
 
 ---
@@ -295,3 +315,230 @@ Fitur lain seperti **SO2 (0.09)** dan **Temperature (0.08)** memberikan kontribu
 - **PM2.5 dan PM10**, meskipun kurang penting secara prediktif dalam model ini, tetap perlu diperhatikan karena dampaknya terhadap kesehatan telah banyak dibuktikan dalam studi epidemiologi.
 
 ---
+
+## Data Preparation
+
+### 1. Label Encoding dengan Mapping pada Fitur Target
+
+Proses encoding dilakukan secara manual untuk fitur target **Air Quality** agar label merepresentasikan tingkatan kualitas udara secara logis (ordinal). Mapping digunakan sebagai berikut:
+
+| Kategori Air Quality | Label |
+|----------------------|-------|
+| Good                 | 0     |
+| Moderate             | 1     |
+| Poor                 | 2     |
+| Hazardous            | 3     |
+
+Mapping manual digunakan agar urutan label pada variabel target mewakili tingkatan kualitas udara secara logis. Berbeda dengan `LabelEncoder` yang mengurutkan label berdasarkan alfabet, mapping memungkinkan kita mengatur sendiri skala ordinal sesuai konteks (misal: *Good < Moderate < Poor < Hazardous*). Ini penting agar model dapat memahami bahwa kualitas udara memiliki tingkatan berurutan, bukan sekadar kategori acak.
+
+---
+
+### 2. Reduksi Dimensi dengan Principal Component Analysis (PCA)
+
+#### Justifikasi Reduksi Dimensi via PCA
+
+Dari hasil analisis korelasi, disimpulkan bahwa hanya fitur **PM2.5** dan **PM10** yang memiliki tingkat korelasi sangat tinggi (**0.97**), menunjukkan informasi yang tumpang tindih. Oleh karena itu, PCA difokuskan pada kedua variabel ini untuk merangkum variasi data menjadi satu komponen utama. Fitur lainnya tetap dipertahankan secara individual agar karakteristik spesifik masing-masing variabel tetap terjaga.
+
+#### Hasil PCA
+
+| Komponen | Explained Variance Ratio |
+|----------|---------------------------|
+| PC1      | 98.7%                     |
+| PC2      | 1.3%                      |
+
+Berdasarkan hasil PCA terhadap variabel **PM2.5** dan **PM10**, satu komponen utama mampu menjelaskan sebesar **98.7%** variasi data keduanya. Ini menunjukkan bahwa informasi dari kedua variabel sangat tumpang tindih, sehingga dapat diringkas menjadi satu fitur utama tanpa kehilangan informasi penting. Reduksi dimensi ini bertujuan mengurangi redundansi data secara efektif dan menjaga efisiensi analisis.
+
+---
+
+### 3. Train-Test Split
+
+| Dataset | Jumlah Sampel |
+|---------|----------------|
+| Total   | 5000           |
+| Train   | 4000 (80%)     |
+| Test    | 1000 (20%)     |
+
+Dengan total 5000 data, membagi 80% untuk pelatihan dan 20% untuk pengujian memberikan cukup data bagi model untuk belajar dengan baik, sekaligus menyisakan data yang memadai untuk mengukur performa model secara objektif. Proporsi ini cukup umum digunakan karena menjaga keseimbangan antara kebutuhan generalisasi model dan efektivitas pelatihan.
+
+---
+
+### 4. Data Scaling dengan RobustScaler
+
+Dalam dataset ini, beberapa variabel numerik terdeteksi memiliki **outliers** yang cukup signifikan. Penggunaan teknik standarisasi berbasis rata-rata dan standar deviasi seperti `StandardScaler` menjadi kurang tepat karena mudah terpengaruh oleh outliers, yang dapat menyebabkan skala data menjadi bias.
+
+Oleh karena itu, digunakan **RobustScaler** yang melakukan standarisasi dengan memanfaatkan **median dan interquartile range (IQR)**, sehingga lebih tahan terhadap pengaruh nilai ekstrem. Pendekatan ini memastikan skala data lebih representatif tanpa distorsi dari outliers, dan membantu meningkatkan stabilitas model saat pelatihan.
+
+---
+
+## Model Development
+
+Pada tahap pengembangan model, digunakan tiga algoritma klasifikasi yang umum dan efektif, yaitu K-Nearest Neighbors (KNN), Random Forest (RF), dan XGBoost (XGB). Pemilihan ketiga model tersebut didasarkan pada karakteristik masing-masing serta tujuan untuk membandingkan performa secara empiris.
+
+### K-Nearest Neighbors (KNN)
+
+```python
+knn_model = KNeighborsClassifier(n_neighbors=5)
+knn_model.fit(X_train_scaled, y_train)
+````
+KNN merupakan algoritma sederhana yang mengklasifikasikan data berdasarkan kedekatan dengan tetangga terdekat dalam ruang fitur. Algoritma ini cocok sebagai baseline karena tidak memerlukan asumsi distribusi data yang kompleks. Jumlah tetangga yang dipertimbangkan dalam klasifikasi ditentukan sebanyak 5 sebagai nilai awal percobaan. Parameter ini dapat dioptimasi lebih lanjut untuk memperoleh performa terbaik.
+
+### Random Forest (RF)
+
+````python
+rf_model = RandomForestClassifier(n_estimators=100, random_state=123)
+rf_model.fit(X_train_scaled, y_train)
+````
+Random Forest adalah metode ensemble yang menggabungkan banyak pohon keputusan untuk meningkatkan akurasi dan mengurangi risiko overfitting. Model ini efektif dalam menangani dataset dengan fitur kompleks dan variabel yang banyak.
+
+**Parameter:**
+
+  * `n_estimators=100`
+    Jumlah pohon keputusan yang dibangun sebanyak 100, dipilih sebagai kompromi antara akurasi dan waktu komputasi.
+  * `random_state=123`
+    Digunakan untuk memastikan hasil yang konsisten pada setiap eksekusi.
+
+### XGBoost (XGB)
+
+````python
+xgb_model = XGBClassifier(n_estimators=100, random_state=123, use_label_encoder=False, eval_metric='mlogloss')
+xgb_model.fit(X_train_scaled, y_train)
+````
+XGBoost adalah algoritma boosting yang populer karena efisiensi dan performanya dalam menangani data besar dan kompleks. Model ini secara iteratif meningkatkan kekuatan prediksi dengan memperbaiki kesalahan dari model sebelumnya.
+
+**Parameter:**
+
+  * `n_estimators=100`
+    Menentukan jumlah iterasi pohon boosting yang akan dibuat.
+  * `random_state=123`
+    Untuk memastikan reproducibility.
+  * `use_label_encoder=False`
+    Menonaktifkan penggunaan label encoder bawaan agar sesuai dengan versi terbaru XGBoost.
+  * `eval_metric='mlogloss'`
+    Fungsi evaluasi log loss untuk klasifikasi multi-kelas.
+
+Ketiga model ini digunakan dengan pengaturan parameter awal sebagai percobaan dasar
+
+---
+
+## Evaluasi Model
+
+### Akurasi Model & Classification Report
+
+Evaluasi performa model dilakukan menggunakan metrik akurasi serta classification report yang mencakup precision, recall, dan f1-score untuk masing-masing kelas. Ketiga model yang dievaluasi adalah K-Nearest Neighbors (KNN), Random Forest, dan XGBoost. Tujuan dari evaluasi ini adalah untuk mengukur kemampuan model dalam mengklasifikasikan data secara tepat dan konsisten pada berbagai kelas.
+
+#### Akurasi Train dan Test
+
+| Model          | Train Accuracy | Test Accuracy |
+|----------------|----------------|---------------|
+| KNN            | 0.9450         | 0.9140        |
+| Random Forest  | 1.0000         | 0.9490        |
+| XGBoost        | 1.0000         | 0.9450        |
+
+Berdasarkan tabel di atas, Random Forest dan XGBoost mencapai akurasi sempurna pada data latih. Meskipun demikian, keduanya tetap menunjukkan generalisasi yang baik pada data uji dengan akurasi masing-masing sebesar 94.90% dan 94.50%. Sementara itu, KNN memiliki akurasi uji yang lebih rendah, yaitu 91.40%, namun tetap kompetitif sebagai model dasar. Visualisasi berupa bar chart juga dilampirkan untuk menunjukkan perbandingan akurasi ketiga model secara lebih jelas.
+
+#### Classification Report
+
+Classification report menampilkan evaluasi yang lebih mendetail terhadap performa model berdasarkan masing-masing kelas target. Tabel berikut memuat nilai precision, recall, dan f1-score dari ketiga model pada tiap kelas.
+
+| Kelas | Precision (KNN) | Recall (KNN) | F1-Score (KNN) | Support | Precision (RF) | Recall (RF) | F1-Score (RF) | Support | Precision (XGB) | Recall (XGB) | F1-Score (XGB) | Support |
+|-------|------------------|--------------|----------------|---------|----------------|-------------|----------------|---------|------------------|--------------|----------------|---------|
+| 0     | 0.98             | 1.00         | 0.99           | 400     | 1.00           | 1.00        | 1.00           | 400     | 1.00             | 1.00         | 1.00           | 400     |
+| 1     | 0.90             | 0.95         | 0.92           | 300     | 0.95           | 0.97        | 0.96           | 300     | 0.94             | 0.96         | 0.95           | 300     |
+| 2     | 0.81             | 0.81         | 0.81           | 200     | 0.86           | 0.90        | 0.88           | 200     | 0.87             | 0.87         | 0.87           | 200     |
+| 3     | 0.91             | 0.67         | 0.77           | 100     | 0.93           | 0.79        | 0.85           | 100     | 0.89             | 0.83         | 0.86           | 100     |
+| **Accuracy**     |      -           |      -        | **0.91**       | 1000    |      -         |     -       | **0.95**       | 1000    |       -          |     -         | **0.94**       | 1000    |
+| Macro Avg | 0.90             | 0.86         | 0.87           | 1000    | 0.93           | 0.91        | 0.92           | 1000    | 0.93             | 0.92         | 0.92           | 1000    |
+| Weighted Avg | 0.91         | 0.91         | 0.91           | 1000    | 0.95           | 0.95        | 0.95           | 1000    | 0.94             | 0.94         | 0.94           | 1000    |
+
+Precision menunjukkan proporsi prediksi benar dari semua prediksi yang diberikan model untuk suatu kelas. Nilai precision yang tinggi menandakan bahwa model jarang memberikan prediksi positif yang salah. Recall mengukur sejauh mana model dapat menangkap seluruh data positif yang sebenarnya; semakin tinggi recall, semakin sedikit kasus positif yang terlewat oleh model. F1-score merupakan rata-rata harmonis dari precision dan recall, yang memberikan gambaran menyeluruh tentang keseimbangan antara keduanya.
+
+Hasil evaluasi menunjukkan bahwa model Random Forest dan XGBoost secara umum memiliki precision, recall, dan f1-score yang tinggi dan seimbang pada semua kelas. Kinerja terbaik terlihat pada kelas 0 dan 1, yang juga memiliki jumlah data yang lebih besar. Sementara itu, kelas 3 menunjukkan nilai recall yang lebih rendah pada model KNN, yang mengindikasikan bahwa model ini sering gagal mengidentifikasi kelas tersebut. Nilai f1-score juga relatif lebih rendah pada KNN dibandingkan dua model lainnya, terutama pada kelas dengan jumlah data yang lebih sedikit.
+
+Secara keseluruhan, Random Forest menunjukkan performa terbaik dengan akurasi tertinggi dan metrik evaluasi yang stabil di semua kelas. XGBoost mengikuti dengan performa yang hampir serupa, sementara KNN tetap layak sebagai model pembanding meskipun memiliki keterbatasan pada beberapa kelas tertentu. Evaluasi ini dapat menjadi dasar dalam memilih model yang paling sesuai untuk diterapkan secara operasional, terutama bila mempertimbangkan trade-off antara akurasi dan kompleksitas model.
+
+---
+
+### Confusion Matrix
+![image](https://github.com/user-attachments/assets/3e34060c-d64b-4427-a386-cebebdf29380)
+
+Confusion matrix digunakan untuk mengevaluasi sejauh mana model dapat membedakan antar kelas berdasarkan prediksi dan label aktual. Dalam studi ini, terdapat empat kelas yang merepresentasikan kualitas udara, yaitu kelas 0 (Good), 1 (Moderate), 2 (Poor), dan 3 (Hazardous).
+
+Model K-Nearest Neighbors (KNN) menunjukkan performa yang sangat baik dalam mengklasifikasikan kelas 0, dengan seluruh 400 sampel diprediksi secara akurat. Namun, model ini mengalami kesulitan dalam membedakan kelas 2 dan 3. Kelas 2, misalnya, mengalami salah klasifikasi yang cukup signifikan ke kelas 1 dan 3. Akurasi keseluruhan model KNN mencapai 91.4%.
+
+Model Random Forest memperlihatkan kinerja klasifikasi yang lebih merata di seluruh kelas, dengan hanya sedikit kesalahan prediksi antar kelas yang berdekatan. Model ini berhasil mengklasifikasikan 399 dari 400 sampel pada kelas 0, serta 292 dari 300 sampel pada kelas 1. Meskipun terdapat beberapa kesalahan dalam prediksi kelas 2 dan 3, jumlahnya relatif kecil dibandingkan KNN. Akurasi keseluruhan model ini tercatat sebesar 94.9%.
+
+Model XGBoost menunjukkan pola yang mirip dengan Random Forest dan memiliki akurasi keseluruhan sebesar 94.5%. Salah satu keunggulan utama XGBoost terlihat pada kemampuannya dalam mengklasifikasikan kelas 3 (Hazardous), dengan 83 dari 100 sampel berhasil diprediksi secara akurat. Hal ini menjadikan XGBoost model yang paling sensitif terhadap kelas yang paling kritis dari perspektif kesehatan publik.
+
+Secara umum, semua model menunjukkan kecenderungan melakukan kesalahan klasifikasi pada kelas yang secara ordinal berdekatan. Misalnya, kelas 1 dan 2 cenderung saling tertukar dalam prediksi, yang menandakan bahwa model mampu mengenali kemiripan karakteristik antar kelas meskipun belum sepenuhnya optimal dalam membedakan batasannya.
+
+---
+
+### Grafik AUC-ROC
+![image](https://github.com/user-attachments/assets/c0bbb248-f83a-43a2-a1b0-71eb47a444b6)
+
+Kurva ROC (Receiver Operating Characteristic) digunakan untuk menggambarkan trade-off antara True Positive Rate dan False Positive Rate pada berbagai ambang keputusan. Nilai AUC (Area Under the Curve) memberikan ukuran keseluruhan dari performa model, di mana nilai lebih tinggi mengindikasikan model yang lebih baik dalam membedakan kelas.
+
+Model Random Forest dan XGBoost sama-sama memperoleh nilai AUC sebesar 0.99, menandakan kemampuan klasifikasi yang sangat tinggi. Keduanya menunjukkan kurva ROC yang hampir berhimpit dan menjauhi garis diagonal, yang merupakan indikasi klasifikasi acak. Model KNN memperoleh AUC sebesar 0.97, yang juga sangat baik, namun sedikit lebih rendah dibandingkan dua model lainnya.
+
+Perbedaan yang paling mencolok terdapat pada area awal kurva (False Positive Rate < 0.1), di mana Random Forest dan XGBoost mencapai True Positive Rate yang tinggi lebih cepat dibandingkan KNN. Hal ini menunjukkan bahwa kedua model tersebut lebih efektif dalam mendeteksi kasus positif dengan tingkat kesalahan minimum, khususnya pada skenario di mana kesalahan klasifikasi berdampak besar, seperti identifikasi kualitas udara buruk.
+
+---
+
+### Kesimpulan Evaluasi Model Klasifikasi
+
+#### Akurasi Model
+
+| Model         | Train Accuracy | Test Accuracy |
+| ------------- | -------------- | ------------- |
+| KNN           | 0.9450         | 0.9140        |
+| Random Forest | 1.0000         | 0.9490        |
+| XGBoost       | 1.0000         | 0.9450        |
+
+Model Random Forest dan XGBoost menunjukkan akurasi sempurna pada data latih, mengindikasikan kemampuan untuk mempelajari pola dalam data dengan sangat baik. Namun, hal ini juga perlu diwaspadai karena berpotensi overfitting. Pada data uji, Random Forest tetap mempertahankan performa tertinggi dengan akurasi 94.9%, diikuti XGBoost (94.5%) dan KNN (91.4%). Meskipun KNN tidak seakurat dua model lainnya, performanya masih tergolong baik.
+
+---
+
+#### Classification Report (Data Uji)
+
+| Kelas          | KNN (F1-score) | Random Forest (F1-score) | XGBoost (F1-score) |
+| -------------- | -------------- | ------------------------ | ------------------ |
+| Good           | 0.99           | 1.00                     | 1.00               |
+| Hazardous      | 0.92           | 0.96                     | 0.95               |
+| Moderate       | 0.81           | 0.88                     | 0.87               |
+| Poor           | 0.77           | 0.85                     | 0.86               |
+| **Macro Avg**  | 0.87           | 0.92                     | 0.92               |
+| **Weighted Avg** | 0.91         | 0.95                     | 0.94               |
+
+Random Forest dan XGBoost menunjukkan kinerja superior secara konsisten di seluruh kelas, terutama pada kelas yang lebih sulit seperti *Moderate* dan *Poor*. KNN cenderung unggul hanya di kelas *Good*, namun mengalami penurunan performa signifikan pada kelas lain, khususnya *Poor*.
+
+---
+
+#### AUC-ROC Score
+
+| Model         | AUC Score |
+| ------------- | --------- |
+| KNN           | 0.97      |
+| Random Forest | 0.99      |
+| XGBoost       | 0.99      |
+
+Nilai AUC-ROC menunjukkan bahwa Random Forest dan XGBoost memiliki kemampuan klasifikasi yang sangat tinggi di berbagai threshold, dengan AUC sebesar 0.99. Model KNN memiliki AUC sebesar 0.97, yang meskipun sedikit lebih rendah, masih termasuk dalam kategori performa yang sangat baik.
+
+---
+
+Secara umum, model **Random Forest** tampil sebagai model terbaik berdasarkan akurasi, F1-score per kelas, dan AUC-ROC. Model ini tidak hanya unggul dalam klasifikasi kelas mayoritas (*Good*), tetapi juga menunjukkan performa tinggi pada kelas minoritas yang lebih sulit seperti *Hazardous* dan *Poor*.
+
+Model **XGBoost** menjadi alternatif kuat dengan performa yang hampir setara, khususnya unggul dalam identifikasi kelas *Hazardous*. Perbedaan performanya dibanding Random Forest sangat tipis dan masih dapat dipertimbangkan sesuai kebutuhan implementasi.
+
+Model **KNN**, meskipun cukup baik dari sisi akurasi keseluruhan, menunjukkan kelemahan dalam menangani kelas *Moderate* dan *Poor*. Hal ini menunjukkan bahwa model ini kurang cocok untuk konteks di mana semua kelas harus diidentifikasi secara seimbang dan akurat.
+
+Untuk implementasi sistem klasifikasi kualitas udara yang andal, Random Forest direkomendasikan sebagai pilihan utama, dengan XGBoost sebagai cadangan yang sangat kompetitif.
+
+---
+
+## Kesimpulan Akhir
+
+Berdasarkan hasil eksplorasi data dan analisis fitur, dapat disimpulkan bahwa faktor paling berpengaruh terhadap tingkat kualitas udara di suatu wilayah adalah konsentrasi **CO**, **jarak ke kawasan industri**, dan **NO₂**. Ketiganya konsisten muncul sebagai fitur paling penting baik dalam analisis korelasi, uji ANOVA, maupun ranking feature importance dari model Random Forest. Fitur lain seperti **SO₂** dan **temperature** juga berkontribusi secara sedang, sedangkan **PM2.5** dan **PM10**, meskipun memiliki kontribusi kecil secara prediktif, tetap penting untuk diperhatikan karena dampak kesehatannya yang signifikan menurut literatur ilmiah. Temuan ini menjawab **Pernyataan Masalah 1**, bahwa variabel gas polutan (khususnya CO dan NO₂) serta faktor geografis seperti jarak ke kawasan industri merupakan penentu utama kualitas udara.
+
+Untuk menjawab **Pernyataan Masalah 2**, proyek ini telah berhasil membangun model klasifikasi multikelas menggunakan tiga algoritma utama: KNN, Random Forest, dan XGBoost. Model dikembangkan untuk mengklasifikasikan kualitas udara ke dalam kategori *Good*, *Moderate*, *Poor*, dan *Hazardous* berdasarkan kombinasi fitur lingkungan dan demografis. Hasil evaluasi menunjukkan bahwa semua model mampu melakukan klasifikasi dengan akurasi tinggi, namun **Random Forest** unggul paling konsisten dengan test accuracy 94.9%, macro F1-score 0.92, dan AUC-ROC 0.99. XGBoost menyusul dengan performa hampir setara, sementara KNN sedikit tertinggal terutama dalam mengklasifikasikan kelas *Moderate* dan *Poor*.
+
+Menjawab **Pernyataan Masalah 3**, evaluasi menyeluruh terhadap performa model menunjukkan bahwa Random Forest tidak hanya memiliki akurasi tinggi di data latih dan uji, tetapi juga memberikan generalisasi yang baik terhadap data baru. Model ini juga memberikan interpretabilitas melalui feature importance yang bermanfaat untuk kebijakan publik. Oleh karena itu, **Random Forest direkomendasikan sebagai model utama** dalam sistem prediksi kualitas udara yang andal, dengan **XGBoost** sebagai alternatif kuat yang layak dipertimbangkan sesuai konteks aplikasi. KNN dapat digunakan sebagai baseline model, namun kurang optimal untuk deployment pada sistem nyata yang membutuhkan prediksi seimbang di semua kategori kualitas udara.
